@@ -1,6 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import i18n from '../i18n';
+import CryptoJS from 'crypto-js';
+
+const SECRET_KEY = 'wt_secure_catalog_key_v1';
+
+const encryptData = (data) => {
+  return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString();
+};
+
+const decryptData = (ciphertext) => {
+  try {
+    if (ciphertext.startsWith('{') || ciphertext.startsWith('[')) {
+      return JSON.parse(ciphertext); // Handle unencrypted legacy data gracefully
+    }
+    const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  } catch (error) {
+    console.error("Storage decryption failed", error);
+    return null;
+  }
+};
 
 const ConfigContext = createContext();
 const CatalogContext = createContext();
@@ -31,35 +51,35 @@ export function AppProvider({ children }) {
   // Config State
   const [config, setConfigState] = useState(() => {
     const saved = localStorage.getItem('wt_config');
-    return saved ? JSON.parse(saved) : defaultConfig;
+    return saved ? (decryptData(saved) || defaultConfig) : defaultConfig;
   });
 
   const setConfig = (newConfig) => {
     const updated = { ...config, ...newConfig };
     setConfigState(updated);
-    localStorage.setItem('wt_config', JSON.stringify(updated));
+    localStorage.setItem('wt_config', encryptData(updated));
   };
 
   // Catalog State
   const [catalog, setCatalogState] = useState(() => {
     const saved = localStorage.getItem('wt_catalog');
-    return saved ? JSON.parse(saved) : defaultCatalog;
+    return saved ? (decryptData(saved) || defaultCatalog) : defaultCatalog;
   });
 
   const setCatalog = (newCatalog) => {
     setCatalogState(newCatalog);
-    localStorage.setItem('wt_catalog', JSON.stringify(newCatalog));
+    localStorage.setItem('wt_catalog', encryptData(newCatalog));
   };
 
   // Cart State
   const [cart, setCartState] = useState(() => {
     const saved = localStorage.getItem('wt_cart');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? (decryptData(saved) || []) : [];
   });
 
   const updateCart = (newCart) => {
     setCartState(newCart);
-    localStorage.setItem('wt_cart', JSON.stringify(newCart));
+    localStorage.setItem('wt_cart', encryptData(newCart));
   };
 
   const addToCart = (product, quantity = 1) => {

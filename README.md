@@ -26,8 +26,9 @@ This project was built with a strong focus on premium UI/UX, multi-language supp
 - **📱 WhatsApp Order Integration**:
   - Fully automated processing to construct WhatsApp URLs carrying formatted line items, cart totals, and delivery addresses directly into the merchant's DMs.
 
-- **💾 Local Persistence**:
-  - Zero-database dependency! All settings, cart items, language profiles, and products rely on robust `localStorage` Context APIs, enabling instant and free cloud deployments via Vercel/Netlify.
+- **🔒 AES Secure Persistence**:
+  - Zero-database dependency! All settings, cart items, language profiles, and products rely on robust `localStorage` Context APIs.
+  - Transparently encrypted via `crypto-js` AES-256 ensuring casual storefront visitors cannot tamper manually with config or prices.
 
 ---
 

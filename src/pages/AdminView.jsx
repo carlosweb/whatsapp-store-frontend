@@ -63,16 +63,16 @@ export default function AdminView() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-extrabold m-0 tracking-tight">{t('dashboard')}</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-              className="p-2 bg-white dark:bg-zinc-900 rounded-full shadow-sm border border-gray-200 dark:border-white/10 hover:border-black dark:hover:border-white/40 transition-colors focus:outline-none text-black dark:text-white flex-shrink-0"
+              className="p-2 sm:p-2 bg-white dark:bg-zinc-900 rounded-full shadow-sm border border-gray-200 dark:border-white/10 hover:border-black dark:hover:border-white/40 transition-colors focus:outline-none text-black dark:text-white flex-shrink-0"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             {config.isSetupComplete && (
-              <Link to="/" target="_blank" className="hidden sm:flex items-center gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 px-4 py-2 rounded-xl text-sm font-bold hover:border-black dark:hover:border-white/40 transition-colors shadow-sm focus:outline-none">
-                {t('view_store')} <ExternalLink size={16} />
+              <Link to="/" target="_blank" className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:border-black dark:hover:border-white/40 transition-colors shadow-sm focus:outline-none whitespace-nowrap">
+                {t('view_store')} <ExternalLink size={16} className="hidden sm:block" />
               </Link>
             )}
           </div>
