@@ -1,11 +1,12 @@
 import React from 'react';
-import { useCart } from '../contexts/AppContext';
+import { useCart, useConfig } from '../contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function CartFooter() {
   const { cart, totalPrice: cartTotalPrice } = useCart();
+  const { config } = useConfig();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -38,7 +39,7 @@ export default function CartFooter() {
         <button 
           onClick={(e) => {
             e.stopPropagation();
-            navigate('/checkout');
+            navigate(`/${config.slug}/checkout`);
           }}
           className="flex items-center justify-center gap-2 bg-[var(--color-primary)] text-white px-6 sm:px-8 py-3.5 rounded-2xl font-bold text-sm hover:scale-[1.03] active:scale-[0.97] transition-all shadow-lg focus:outline-none shrink-0"
         >

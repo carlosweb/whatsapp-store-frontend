@@ -36,7 +36,7 @@ export default function CheckoutView() {
           <h2 className="text-2xl font-bold mb-2 text-black dark:text-white">{t('empty_cart')}</h2>
           <p className="text-gray-500 dark:text-zinc-400 mb-8">{t('empty_cart_desc')}</p>
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/${config.slug}`)}
             className="w-full bg-black text-white py-4 rounded-xl text-lg font-bold hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg focus:outline-none"
           >
             {t('return_catalog')}
@@ -50,7 +50,7 @@ export default function CheckoutView() {
     <div className="min-h-screen bg-[var(--color-bg-subtle)] dark:bg-zinc-950 pb-12 font-sans text-black dark:text-white selection:bg-[var(--color-primary)] selection:text-white transition-colors duration-300">
       <div className="max-w-2xl mx-auto px-6 sm:px-0">
         <div className="flex items-center gap-4 mb-8 pt-6">
-          <button onClick={() => navigate('/')} className="p-2 bg-white dark:bg-zinc-900 rounded-full shadow-sm border border-gray-200 dark:border-white/10 hover:scale-110 transition-transform focus:outline-none">
+          <button onClick={() => navigate(`/${config.slug}`)} className="p-2 bg-white dark:bg-zinc-900 rounded-full shadow-sm border border-gray-200 dark:border-white/10 hover:scale-110 transition-transform focus:outline-none">
             <ArrowLeft size={24} className="text-black dark:text-white" />
           </button>
           <h1 className="text-3xl font-extrabold m-0 tracking-tight">{t('checkout_title')}</h1>

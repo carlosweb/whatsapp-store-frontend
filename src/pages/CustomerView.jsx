@@ -20,6 +20,15 @@ export default function CustomerView() {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  if (!config.isSetupComplete) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-subtle)] dark:bg-zinc-950 flex flex-col items-center justify-center text-center p-6">
+        <h1 className="text-4xl font-extrabold text-black dark:text-white mb-2">Store Not Found</h1>
+        <p className="text-gray-500 dark:text-zinc-400">The requested store could not be found or has not been set up yet.</p>
+      </div>
+    );
+  }
+
   // Fallback to a nice minimal string if logo is missing
   const businessInitial = config.businessName ? config.businessName.charAt(0).toUpperCase() : 'U';
 

@@ -5,15 +5,18 @@ import App from './App.jsx'
 import './App.css'
 import './i18n.js'
 import { AppProvider } from './contexts/AppContext.jsx'
+import { AuthProvider } from './contexts/AuthContext.jsx'
 import { Toaster } from 'sonner'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </AppProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </AuthProvider>
+    </BrowserRouter>
     <Toaster position="top-center" richColors />
   </React.StrictMode>,
 )

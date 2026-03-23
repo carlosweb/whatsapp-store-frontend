@@ -1,120 +1,55 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import i18n from '../i18n';
-import CryptoJS from 'crypto-js';
-
-const SECRET_KEY = 'wt_secure_catalog_key_v1';
-
-const encryptData = (data) => {
-  return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString();
-};
-
-const decryptData = (ciphertext) => {
-  try {
-    if (ciphertext.startsWith('{') || ciphertext.startsWith('[')) {
-      return JSON.parse(ciphertext); // Handle unencrypted legacy data gracefully
-    }
-    const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-  } catch (error) {
-    console.error("Storage decryption failed", error);
-    return null;
-  }
-};
+import { supabase } from '../utils/supabaseClient';
+import { useAuth } from './AuthContext';
+import { useLocation } from 'react-router-dom';
 
 const ConfigContext = createContext();
 const CatalogContext = createContext();
 const CartContext = createContext();
 const ThemeContext = createContext();
 
-// Default values
 const defaultConfig = {
   businessName: 'My Business',
+  slug: '',
   logoUrl: '',
-  primaryColor: '#FF5C00', // blue-500 legacy comment
-  phoneNumber: '', // e.g., '1234567890'
+  primaryColor: '#FF5C00',
+  phoneNumber: '',
   language: 'en',
   isSetupComplete: false,
 };
 
-const defaultCatalog = [
-  { 
-    id: '1', 
-    title: 'Sample Product', 
-    description: 'This is a great product. You can edit this in the admin panel.', 
-    price: 19.99, 
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80' 
-  }
-];
-
 export function AppProvider({ children }) {
-  // Config State
-  const [config, setConfigState] = useState(() => {
-    const saved = localStorage.getItem('wt_config');
-    return saved ? (decryptData(saved) || defaultConfig) : defaultConfig;
-  });
-
-  const setConfig = (newConfig) => {
-    const updated = { ...config, ...newConfig };
-    setConfigState(updated);
-    localStorage.setItem('wt_config', encryptData(updated));
-  };
-
-  // Catalog State
-  const [catalog, setCatalogState] = useState(() => {
-    const saved = localStorage.getItem('wt_catalog');
-    return saved ? (decryptData(saved) || defaultCatalog) : defaultCatalog;
-  });
-
-  const setCatalog = (newCatalog) => {
-    setCatalogState(newCatalog);
-    localStorage.setItem('wt_catalog', encryptData(newCatalog));
-  };
-
-  // Cart State
-  const [cart, setCartState] = useState(() => {
-    const saved = localStorage.getItem('wt_cart');
-    return saved ? (decryptData(saved) || []) : [];
-  });
-
-  const updateCart = (newCart) => {
-    setCartState(newCart);
-    localStorage.setItem('wt_cart', encryptData(newCart));
-  };
-
-  const addToCart = (product, quantity = 1) => {
-    const existing = cart.find(item => item.id === product.id);
-    if (existing) {
-      updateCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item));
-    } else {
-      updateCart([...cart, { ...product, quantity }]);
-    }
-    toast.success(`${product.title} added to cart`);
-  };
-
-  const removeFromCart = (productId) => {
-    updateCart(cart.filter(item => item.id !== productId));
-  };
-
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    updateCart(cart.map(item => item.id === productId ? { ...item, quantity } : item));
-  };
-
-  const clearCart = () => {
-    updateCart([]);
-  };
-
-  const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  // Theme State
+  const { user } = useAuth();
+  const location = useLocation();
+  
+  const [config, setConfig] = useState(defaultConfig);
+  const [catalog, setCatalog] = useState([]);
+  const [isLoadingStore, setIsLoadingStore] = useState(true);
+  
+  // Theme State (keep theme & cart in localStorage)
   const [theme, setThemeState] = useState(() => localStorage.getItem('wt_theme') || 'light');
   const setTheme = (newTheme) => {
     setThemeState(newTheme);
     localStorage.setItem('wt_theme', newTheme);
+  };
+
+  const [cart, setCartState] = useState(() => {
+    const saved = localStorage.getItem('wt_cart');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch (err) {
+      console.warn("Cleared invalid cart data:", err);
+      localStorage.removeItem('wt_cart');
+      return [];
+    }
+  });
+
+  const updateCart = (newCart) => {
+    setCartState(newCart);
+    localStorage.setItem('wt_cart', JSON.stringify(newCart));
   };
 
   useEffect(() => {
@@ -125,19 +60,168 @@ export function AppProvider({ children }) {
     }
   }, [theme]);
 
-  // Apply CSS Variables and Language
   useEffect(() => {
-    document.documentElement.style.setProperty('--primary-color', config.primaryColor);
+    if (config.primaryColor) {
+      document.documentElement.style.setProperty('--primary-color', config.primaryColor);
+    }
     const userLang = localStorage.getItem('user_lang');
     if (!userLang && config.language && i18n.language !== config.language) {
       i18n.changeLanguage(config.language);
     }
   }, [config.primaryColor, config.language]);
 
+  // Fetch Store Data
+  useEffect(() => {
+    const loadStoreData = async () => {
+      setIsLoadingStore(true);
+      const isAdminRoute = location.pathname.startsWith('/admin');
+      let storeData = null;
+
+      try {
+        if (isAdminRoute && user) {
+          const { data, error } = await supabase.from('stores').select('*').eq('user_id', user.id).maybeSingle();
+          if (data) storeData = data;
+        } else if (!isAdminRoute && location.pathname !== '/') {
+          const slug = location.pathname.split('/')[1];
+          if (slug && slug !== 'checkout') {
+            const { data, error } = await supabase.from('stores').select('*').eq('slug', slug).maybeSingle();
+            if (data) storeData = data;
+          }
+        }
+
+        if (storeData) {
+          setConfig({
+            id: storeData.id,
+            businessName: storeData.business_name,
+            slug: storeData.slug,
+            logoUrl: storeData.logo_url,
+            primaryColor: storeData.primary_color,
+            phoneNumber: storeData.phone_number,
+            language: storeData.language,
+            isSetupComplete: true
+          });
+          
+          // Fetch products
+          const { data: products } = await supabase.from('products').select('*').eq('store_id', storeData.id);
+          if (products) {
+            setCatalog(products.map(p => ({
+              id: p.id,
+              title: p.title,
+              description: p.description,
+              price: Number(p.price),
+              imageUrl: p.image_urls?.[0] || '',
+              imageUrls: p.image_urls || []
+            })));
+          }
+        } else {
+          setConfig(defaultConfig);
+          setCatalog([]);
+        }
+      } catch (err) {
+        console.error("Error loading store data", err);
+      } finally {
+        setIsLoadingStore(false);
+      }
+    };
+
+    loadStoreData();
+  }, [user, location.pathname]);
+
+  const updateConfig = async (newConfigData) => {
+    if (!user) throw new Error("Must be logged in");
+    const payload = {
+      user_id: user.id,
+      slug: newConfigData.slug,
+      business_name: newConfigData.businessName,
+      logo_url: newConfigData.logoUrl,
+      primary_color: newConfigData.primaryColor,
+      phone_number: newConfigData.phoneNumber,
+      language: newConfigData.language,
+    };
+
+    if (config.id) {
+      const { error } = await supabase.from('stores').update(payload).eq('id', config.id);
+      if (error) throw error;
+      setConfig(prev => ({ ...prev, ...newConfigData, isSetupComplete: true }));
+    } else {
+      const { data, error } = await supabase.from('stores').insert([payload]).select().single();
+      if (error) throw error;
+      setConfig(prev => ({ ...prev, ...newConfigData, id: data.id, isSetupComplete: true }));
+    }
+  };
+
+  const addProduct = async (productData) => {
+    if (!config.id) throw new Error("Store config not saved yet");
+    const payload = {
+      store_id: config.id,
+      title: productData.title,
+      description: productData.description,
+      price: productData.price,
+      image_urls: productData.imageUrls,
+    };
+    const { data, error } = await supabase.from('products').insert([payload]).select().single();
+    if (error) throw error;
+    
+    const newProduct = {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      price: Number(data.price),
+      imageUrl: data.image_urls?.[0] || '',
+      imageUrls: data.image_urls || []
+    };
+    setCatalog(prev => [...prev, newProduct]);
+  };
+
+  const updateProduct = async (id, productData) => {
+    const payload = {
+      title: productData.title,
+      description: productData.description,
+      price: productData.price,
+      image_urls: productData.imageUrls,
+    };
+    const { error } = await supabase.from('products').update(payload).eq('id', id);
+    if (error) throw error;
+    
+    setCatalog(prev => prev.map(p => p.id === id ? {
+      ...p,
+      title: productData.title,
+      description: productData.description,
+      price: Number(productData.price),
+      imageUrl: productData.imageUrls?.[0] || p.imageUrl,
+      imageUrls: productData.imageUrls
+    } : p));
+  };
+
+  const deleteProduct = async (id) => {
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
+    setCatalog(prev => prev.filter(p => p.id !== id));
+  };
+
+  // Cart Functions
+  const addToCart = (product, quantity = 1) => {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      updateCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item));
+    } else {
+      updateCart([...cart, { ...product, quantity }]);
+    }
+    toast.success(`${product.title} added to cart`);
+  };
+
+  const removeFromCart = (productId) => updateCart(cart.filter(item => item.id !== productId));
+  const updateQuantity = (productId, quantity) => {
+    if (quantity <= 0) { removeFromCart(productId); return; }
+    updateCart(cart.map(item => item.id === productId ? { ...item, quantity } : item));
+  };
+  const clearCart = () => updateCart([]);
+  const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      <ConfigContext.Provider value={{ config, setConfig }}>
-        <CatalogContext.Provider value={{ catalog, setCatalog }}>
+      <ConfigContext.Provider value={{ config, updateConfig, isLoadingStore }}>
+        <CatalogContext.Provider value={{ catalog, addProduct, updateProduct, deleteProduct }}>
           <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice }}>
             {children}
           </CartContext.Provider>
@@ -150,6 +234,4 @@ export function AppProvider({ children }) {
 export const useConfig = () => useContext(ConfigContext);
 export const useCatalog = () => useContext(CatalogContext);
 export const useCart = () => useContext(CartContext);
-export function useTheme() {
-  return useContext(ThemeContext);
-}
+export const useTheme = () => useContext(ThemeContext);

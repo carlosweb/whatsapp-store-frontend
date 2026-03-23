@@ -1,39 +1,56 @@
 import React, { useState } from 'react';
 import { useConfig, useCatalog, useTheme } from '../contexts/AppContext';
-import { Plus, Trash2, Settings, Edit, ExternalLink, Sun, Moon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Plus, Trash2, Settings, Edit, ExternalLink, Sun, Moon, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 export default function AdminView() {
   const { t } = useTranslation();
-  const { config, setConfig } = useConfig();
-  const { catalog, setCatalog } = useCatalog();
+  const { config, updateConfig } = useConfig();
+  const { catalog, addProduct, updateProduct, deleteProduct } = useCatalog();
   const { theme, setTheme } = useTheme();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('config');
+  const [loading, setLoading] = useState(false);
 
-  const handleConfigSave = (e) => {
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/admin/login');
+  };
+
+  const handleConfigSave = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const fd = new FormData(e.target);
-    setConfig({
-      businessName: fd.get('businessName'),
-      logoUrl: fd.get('logoUrl'),
-      primaryColor: fd.get('primaryColor'),
-      phoneNumber: fd.get('phoneNumber'),
-      language: fd.get('language'),
-      isSetupComplete: true,
-    });
-    toast.success(t('settings_saved'));
-    if (!config.isSetupComplete) {
-      setActiveTab('products');
+    try {
+      await updateConfig({
+        businessName: fd.get('businessName'),
+        slug: fd.get('slug'),
+        logoUrl: fd.get('logoUrl'),
+        primaryColor: fd.get('primaryColor'),
+        phoneNumber: fd.get('phoneNumber'),
+        language: fd.get('language'),
+      });
+      toast.success(t('settings_saved'));
+      if (!config.isSetupComplete) {
+        setActiveTab('products');
+      }
+    } catch (err) {
+      toast.error("Error saving settings: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const [editingProduct, setEditingProduct] = useState(null);
 
-  const handleProductSave = (e) => {
+  const handleProductSave = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const fd = new FormData(e.target);
     const productData = {
       title: fd.get('title'),
@@ -42,19 +59,29 @@ export default function AdminView() {
       imageUrls: fd.get('imageUrls').split('\n').map(u => u.trim()).filter(Boolean),
     };
 
-    if (editingProduct.id) {
-      setCatalog(catalog.map(p => p.id === editingProduct.id ? { ...p, ...productData } : p));
-    } else {
-      setCatalog([...catalog, { id: Date.now().toString(), ...productData }]);
+    try {
+      if (editingProduct.id) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await addProduct(productData);
+      }
+      toast.success(t('product_saved'));
+      setEditingProduct(null);
+    } catch (err) {
+      toast.error("Error saving product: " + err.message);
+    } finally {
+      setLoading(false);
     }
-    toast.success(t('product_saved'));
-    setEditingProduct(null);
   };
 
-  const deleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     if(confirm(t('delete_confirm'))) {
-      setCatalog(catalog.filter(p => p.id !== id));
-      toast.info(t('product_deleted'));
+      try {
+        await deleteProduct(id);
+        toast.info(t('product_deleted'));
+      } catch (err) {
+        toast.error("Error deleting: " + err.message);
+      }
     }
   };
 
@@ -71,10 +98,17 @@ export default function AdminView() {
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             {config.isSetupComplete && (
-              <Link to="/" target="_blank" className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:border-black dark:hover:border-white/40 transition-colors shadow-sm focus:outline-none whitespace-nowrap">
+              <Link to={`/${config.slug}`} target="_blank" className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:border-black dark:hover:border-white/40 transition-colors shadow-sm focus:outline-none whitespace-nowrap">
                 {t('view_store')} <ExternalLink size={16} className="hidden sm:block" />
               </Link>
             )}
+            <button 
+              onClick={handleSignOut}
+              className="p-2 sm:p-2 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full shadow-sm border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/30 transition-colors focus:outline-none flex-shrink-0"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
         
@@ -110,6 +144,10 @@ export default function AdminView() {
                 <input name="businessName" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.businessName} required />
               </div>
               <div>
+                <label className="block text-sm font-bold ml-1 mb-2 text-gray-700 dark:text-zinc-400">Store Profile URL Slug</label>
+                <input name="slug" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.slug} placeholder="e.g. my-awesome-store" required pattern="[a-zA-Z0-9-]+" title="Only alphanumeric and hyphens allowed" />
+              </div>
+              <div>
                 <label className="block text-sm font-bold ml-1 mb-2 text-gray-700 dark:text-zinc-400">{t('logo_url')}</label>
                 <input name="logoUrl" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.logoUrl} placeholder="https://..." />
               </div>
@@ -135,8 +173,8 @@ export default function AdminView() {
               </div>
             </div>
             
-            <button type="submit" className="w-full mt-8 bg-black dark:bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:scale-[1.01] active:scale-[0.98] transition-transform shadow-lg focus:outline-none">
-              {config.isSetupComplete ? t('save_changes') : t('complete_setup')}
+            <button type="submit" disabled={loading} className="w-full mt-8 bg-black dark:bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:scale-[1.01] active:scale-[0.98] transition-transform shadow-lg focus:outline-none disabled:opacity-50">
+              {loading ? 'Saving...' : (config.isSetupComplete ? t('save_changes') : t('complete_setup'))}
             </button>
           </form>
         )}
@@ -167,8 +205,8 @@ export default function AdminView() {
                 </div>
 
                 <div className="flex gap-4 mt-8">
-                  <button type="button" className="flex-1 bg-white dark:bg-zinc-800 border-2 border-gray-200 dark:border-white/10 text-black dark:text-white py-4 rounded-xl text-lg font-bold hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors focus:outline-none" onClick={() => setEditingProduct(null)}>{t('cancel')}</button>
-                  <button type="submit" className="flex-1 bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_20px_-6px_var(--color-primary)] focus:outline-none">{t('save_product_btn')}</button>
+                  <button type="button" disabled={loading} className="flex-1 bg-white dark:bg-zinc-800 border-2 border-gray-200 dark:border-white/10 text-black dark:text-white py-4 rounded-xl text-lg font-bold hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors focus:outline-none disabled:opacity-50" onClick={() => setEditingProduct(null)}>{t('cancel')}</button>
+                  <button type="submit" disabled={loading} className="flex-1 bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_20px_-6px_var(--color-primary)] focus:outline-none disabled:opacity-50">{loading ? 'Saving...' : t('save_product_btn')}</button>
                 </div>
               </form>
             ) : (
@@ -198,7 +236,7 @@ export default function AdminView() {
                           <button className="p-2 sm:p-2.5 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white rounded-xl transition-colors focus:outline-none" onClick={() => setEditingProduct(product)}>
                             <Edit size={18} />
                           </button>
-                          <button className="p-2 sm:p-2.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-xl transition-colors focus:outline-none" onClick={() => deleteProduct(product.id)}>
+                          <button className="p-2 sm:p-2.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-xl transition-colors focus:outline-none" onClick={() => handleDeleteProduct(product.id)}>
                             <Trash2 size={18} />
                           </button>
                         </div>
