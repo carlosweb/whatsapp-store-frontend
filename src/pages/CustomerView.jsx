@@ -3,6 +3,7 @@ import { useConfig, useCatalog, useCart, useTheme } from '../contexts/AppContext
 import ProductCard from '../components/ProductCard';
 import CartFooter from '../components/CartFooter';
 import Carousel from '../components/Carousel';
+import CarouselHero from '../components/CarouselHero';
 import { X, ShoppingBag, Globe, Sun, Moon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -79,12 +80,7 @@ export default function CustomerView() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-16 sm:pt-48 sm:pb-24 px-6 text-center">
-        <div className="max-w-4xl mx-auto animate-[slideUp_0.8s_ease]">
-          <h2 className="text-5xl sm:text-7xl font-black text-black dark:text-white leading-[1.05] tracking-tighter mb-6">{t('hero_title_1')}<span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] to-[#FF8A00]">{t('hero_title_highlight')}</span><br className="hidden sm:block" />{t('hero_title_2')}</h2>
-          <p className="text-lg sm:text-xl text-gray-500 dark:text-zinc-400 font-medium max-w-2xl mx-auto leading-relaxed">{t('hero_subtitle')}</p>
-        </div>
-      </section>
+      <CarouselHero />
 
       {/* Product Grid */}
       <main className="max-w-7xl mx-auto px-6">

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useConfig, useCatalog, useTheme } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Trash2, Settings, Edit, ExternalLink, Sun, Moon, LogOut } from 'lucide-react';
+import HeroSlideManager from '../components/HeroSlideManager';
+import { Plus, Trash2, Settings, Edit, ExternalLink, Sun, Moon, LogOut, Image as ImageIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -133,6 +134,13 @@ export default function AdminView() {
           >
             <Plus size={18} strokeWidth={3} /> {t('products')}
           </button>
+          <button 
+            disabled={!config.isSetupComplete}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all focus:outline-none ${activeTab === 'hero' ? 'bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'} ${!config.isSetupComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => setActiveTab('hero')}
+          >
+            <ImageIcon size={18} /> Carousel
+          </button>
         </div>
 
         {activeTab === 'config' && (
@@ -247,6 +255,10 @@ export default function AdminView() {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'hero' && (
+          <HeroSlideManager />
         )}
       </div>
     </div>

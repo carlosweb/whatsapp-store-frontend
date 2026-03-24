@@ -9,6 +9,7 @@ const ConfigContext = createContext();
 const CatalogContext = createContext();
 const CartContext = createContext();
 const ThemeContext = createContext();
+const CarouselContext = createContext();
 
 const defaultConfig = {
   businessName: 'My Business',
@@ -26,6 +27,7 @@ export function AppProvider({ children }) {
   
   const [config, setConfig] = useState(defaultConfig);
   const [catalog, setCatalog] = useState([]);
+  const [heroSlides, setHeroSlides] = useState([]);
   const [isLoadingStore, setIsLoadingStore] = useState(true);
   
   // Theme State (keep theme & cart in localStorage)
@@ -113,9 +115,24 @@ export function AppProvider({ children }) {
               imageUrls: p.image_urls || []
             })));
           }
+
+          // Fetch hero slides
+          const { data: slides } = await supabase.from('hero_slides').select('*').eq('store_id', storeData.id).order('order_index', { ascending: true });
+          if (slides) {
+            setHeroSlides(slides.map(s => ({
+              id: s.id,
+              imageUrl: s.image_url,
+              title: s.title || '',
+              subtitle: s.subtitle || '',
+              ctaText: s.cta_text || '',
+              ctaUrl: s.cta_url || '',
+              orderIndex: s.order_index
+            })));
+          }
         } else {
           setConfig(defaultConfig);
           setCatalog([]);
+          setHeroSlides([]);
         }
       } catch (err) {
         console.error("Error loading store data", err);
@@ -199,6 +216,70 @@ export function AppProvider({ children }) {
     setCatalog(prev => prev.filter(p => p.id !== id));
   };
 
+  // Carousel Functions
+  const addHeroSlide = async (slideData) => {
+    if (!config.id) throw new Error("Store config not saved yet");
+    const payload = {
+      store_id: config.id,
+      image_url: slideData.imageUrl,
+      title: slideData.title || '',
+      subtitle: slideData.subtitle || '',
+      cta_text: slideData.ctaText || '',
+      cta_url: slideData.ctaUrl || '',
+      order_index: slideData.orderIndex || heroSlides.length,
+    };
+    const { data, error } = await supabase.from('hero_slides').insert([payload]).select().single();
+    if (error) throw error;
+    
+    const newSlide = {
+      id: data.id,
+      imageUrl: data.image_url,
+      title: data.title || '',
+      subtitle: data.subtitle || '',
+      ctaText: data.cta_text || '',
+      ctaUrl: data.cta_url || '',
+      orderIndex: data.order_index
+    };
+    setHeroSlides(prev => [...prev, newSlide].sort((a,b) => a.orderIndex - b.orderIndex));
+  };
+
+  const updateHeroSlide = async (id, slideData) => {
+    const payload = {
+      image_url: slideData.imageUrl,
+      title: slideData.title || '',
+      subtitle: slideData.subtitle || '',
+      cta_text: slideData.ctaText || '',
+      cta_url: slideData.ctaUrl || '',
+      order_index: slideData.orderIndex,
+    };
+    const { error } = await supabase.from('hero_slides').update(payload).eq('id', id);
+    if (error) throw error;
+    
+    setHeroSlides(prev => prev.map(s => s.id === id ? { ...s, ...slideData } : s).sort((a,b) => a.orderIndex - b.orderIndex));
+  };
+
+  const deleteHeroSlide = async (id) => {
+    const { error } = await supabase.from('hero_slides').delete().eq('id', id);
+    if (error) throw error;
+    setHeroSlides(prev => prev.filter(s => s.id !== id));
+  };
+
+  const updateHeroSlideOrders = async (slidesUpdate) => {
+    await Promise.all(
+      slidesUpdate.map(update => 
+        supabase.from('hero_slides').update({ order_index: update.orderIndex }).eq('id', update.id)
+      )
+    );
+    setHeroSlides(prev => {
+      let newSlides = [...prev];
+      slidesUpdate.forEach(u => {
+        const idx = newSlides.findIndex(s => s.id === u.id);
+        if(idx > -1) newSlides[idx].orderIndex = u.orderIndex;
+      });
+      return newSlides.sort((a,b) => a.orderIndex - b.orderIndex);
+    });
+  };
+
   // Cart Functions
   const addToCart = (product, quantity = 1) => {
     const existing = cart.find(item => item.id === product.id);
@@ -222,9 +303,11 @@ export function AppProvider({ children }) {
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <ConfigContext.Provider value={{ config, updateConfig, isLoadingStore }}>
         <CatalogContext.Provider value={{ catalog, addProduct, updateProduct, deleteProduct }}>
-          <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice }}>
-            {children}
-          </CartContext.Provider>
+          <CarouselContext.Provider value={{ heroSlides, addHeroSlide, updateHeroSlide, deleteHeroSlide, updateHeroSlideOrders }}>
+            <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice }}>
+              {children}
+            </CartContext.Provider>
+          </CarouselContext.Provider>
         </CatalogContext.Provider>
       </ConfigContext.Provider>
     </ThemeContext.Provider>
@@ -233,5 +316,6 @@ export function AppProvider({ children }) {
 
 export const useConfig = () => useContext(ConfigContext);
 export const useCatalog = () => useContext(CatalogContext);
+export const useCarousel = () => useContext(CarouselContext);
 export const useCart = () => useContext(CartContext);
 export const useTheme = () => useContext(ThemeContext);
