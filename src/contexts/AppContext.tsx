@@ -271,7 +271,7 @@ export function AppProvider({ children }) {
       )
     );
     setHeroSlides(prev => {
-      let newSlides = [...prev];
+      const newSlides = [...prev];
       slidesUpdate.forEach(u => {
         const idx = newSlides.findIndex(s => s.id === u.id);
         if(idx > -1) newSlides[idx].orderIndex = u.orderIndex;

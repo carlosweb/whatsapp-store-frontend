@@ -23,7 +23,7 @@ export default function CheckoutView() {
       return;
     }
     const link = generateWhatsAppLink(config.phoneNumber, cart, address, totalPrice);
-    window.location.href = link;
+    window.location.assign(link);
   };
 
   if (cart.length === 0) {

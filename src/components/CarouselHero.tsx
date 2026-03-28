@@ -79,12 +79,7 @@ export default function CarouselHero() {
                        {slide.ctaText}
                      </a>
                    )}
-                   <a 
-                      href="#" 
-                      className="w-full sm:w-auto font-bold text-gray-500 hover:text-black dark:text-zinc-400 dark:hover:text-white flex items-center justify-center gap-2 px-6 py-4 rounded-full hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors group"
-                   >
-                     Learn more <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                   </a>
+
                 </div>
 
                 {/* Features inline list at the bottom matching reference */}
