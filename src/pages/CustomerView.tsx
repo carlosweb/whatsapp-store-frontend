@@ -116,7 +116,7 @@ export default function CustomerView() {
             <div className="p-8 pt-6">
               <div className="flex justify-between items-start mb-3 gap-4">
                 <h3 className="text-3xl font-extrabold text-black dark:text-white leading-tight m-0 tracking-tight">{selectedProduct.title}</h3>
-                <strong className="text-3xl font-black text-[var(--color-primary)] tracking-tighter">${selectedProduct.price.toFixed(2)}</strong>
+                <strong className="text-3xl font-black text-[var(--color-primary)] tracking-tighter">R$ {selectedProduct.price.toFixed(2)}</strong>
               </div>
 
               <p className="text-gray-600 dark:text-zinc-400 leading-relaxed mb-6 font-medium">{selectedProduct.description}</p>
@@ -131,7 +131,7 @@ export default function CustomerView() {
                 className="w-full bg-black dark:bg-[var(--color-primary)] text-white py-4 rounded-2xl text-lg font-bold shadow-xl shadow-black/20 dark:shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <ShoppingBag size={20} />
-                {t('add_to_cart')} — ${selectedProduct.price.toFixed(2)}
+                {t('add_to_cart')} — R$ {selectedProduct.price.toFixed(2)}
               </button>
             </div>
           </div>

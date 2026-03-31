@@ -12,8 +12,10 @@ const ThemeContext = createContext();
 const CarouselContext = createContext();
 
 const defaultConfig = {
+  id: '',
   businessName: 'My Business',
   slug: '',
+  plan: 'start',
   logoUrl: '',
   primaryColor: '#FF5C00',
   phoneNumber: '',
@@ -96,6 +98,7 @@ export function AppProvider({ children }) {
             id: storeData.id,
             businessName: storeData.business_name,
             slug: storeData.slug,
+            plan: storeData.plan || 'start',
             logoUrl: storeData.logo_url,
             primaryColor: storeData.primary_color,
             phoneNumber: storeData.phone_number,

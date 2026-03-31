@@ -56,7 +56,7 @@ export default function ProductCard({ product, onSelect }) {
 
         <div className="flex items-end justify-between mt-auto">
           <strong className="text-2xl font-black text-black dark:text-white tracking-tighter">
-            ${product.price.toFixed(2)}
+            R$ {product.price.toFixed(2)}
           </strong>
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('in_stock')}</span>
         </div>

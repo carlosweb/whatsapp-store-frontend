@@ -51,6 +51,18 @@ export default function AdminView() {
 
   const handleProductSave = async (e) => {
     e.preventDefault();
+    
+    // Check limit if adding new product
+    if (!editingProduct.id) {
+       const planLimits: Record<string, number> = { start: 5, standard: 20, 'business pro': Infinity };
+       const currentPlan = config.plan || 'start';
+       const limit = planLimits[currentPlan] || 5;
+       if (catalog.length >= limit) {
+         toast.error(t('plan_limit_reached'));
+         return;
+       }
+    }
+
     setLoading(true);
     const fd = new FormData(e.target);
     const productData = {
@@ -139,7 +151,7 @@ export default function AdminView() {
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all focus:outline-none ${activeTab === 'hero' ? 'bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'} ${!config.isSetupComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => setActiveTab('hero')}
           >
-            <ImageIcon size={18} /> Carousel
+            <ImageIcon size={18} /> {t('carousel_tab')}
           </button>
         </div>
 
@@ -152,8 +164,8 @@ export default function AdminView() {
                 <input name="businessName" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.businessName} required />
               </div>
               <div>
-                <label className="block text-sm font-bold ml-1 mb-2 text-gray-700 dark:text-zinc-400">Store Profile URL Slug</label>
-                <input name="slug" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.slug} placeholder="e.g. my-awesome-store" required pattern="[a-zA-Z0-9-]+" title="Only alphanumeric and hyphens allowed" />
+                <label className="block text-sm font-bold ml-1 mb-2 text-gray-700 dark:text-zinc-400">{t('store_slug')}</label>
+                <input name="slug" className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-base font-medium outline-none focus:border-[var(--color-primary)] dark:focus:border-[var(--color-primary)] focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all dark:text-white" defaultValue={config.slug} placeholder={t('store_slug_placeholder')} required pattern="[a-zA-Z0-9-]+" title="Only alphanumeric and hyphens allowed" />
               </div>
               <div>
                 <label className="block text-sm font-bold ml-1 mb-2 text-gray-700 dark:text-zinc-400">{t('logo_url')}</label>
@@ -182,7 +194,7 @@ export default function AdminView() {
             </div>
             
             <button type="submit" disabled={loading} className="w-full mt-8 bg-black dark:bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:scale-[1.01] active:scale-[0.98] transition-transform shadow-lg focus:outline-none disabled:opacity-50">
-              {loading ? 'Saving...' : (config.isSetupComplete ? t('save_changes') : t('complete_setup'))}
+              {loading ? t('saving') : (config.isSetupComplete ? t('save_changes') : t('complete_setup'))}
             </button>
           </form>
         )}
@@ -214,14 +226,23 @@ export default function AdminView() {
 
                 <div className="flex gap-4 mt-8">
                   <button type="button" disabled={loading} className="flex-1 bg-white dark:bg-zinc-800 border-2 border-gray-200 dark:border-white/10 text-black dark:text-white py-4 rounded-xl text-lg font-bold hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors focus:outline-none disabled:opacity-50" onClick={() => setEditingProduct(null)}>{t('cancel')}</button>
-                  <button type="submit" disabled={loading} className="flex-1 bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_20px_-6px_var(--color-primary)] focus:outline-none disabled:opacity-50">{loading ? 'Saving...' : t('save_product_btn')}</button>
+                  <button type="submit" disabled={loading} className="flex-1 bg-[var(--color-primary)] text-white py-4 rounded-xl text-lg font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_20px_-6px_var(--color-primary)] focus:outline-none disabled:opacity-50">{loading ? t('saving') : t('save_product_btn')}</button>
                 </div>
               </form>
             ) : (
               <div>
                 <button 
                   className="w-full bg-black dark:bg-[var(--color-primary)] text-white py-4 rounded-2xl text-lg font-bold hover:scale-[1.01] active:scale-[0.98] transition-transform shadow-lg mb-8 flex items-center justify-center gap-2 focus:outline-none"
-                  onClick={() => setEditingProduct({ title: '', description: '', price: '', imageUrl: '' })}
+                  onClick={() => {
+                    const planLimits: Record<string, number> = { start: 5, standard: 20, 'business pro': Infinity };
+                    const currentPlan = config.plan || 'start';
+                    const limit = planLimits[currentPlan] || 5;
+                    if (catalog.length >= limit) {
+                      toast.error(t('plan_limit_reached'));
+                      return;
+                    }
+                    setEditingProduct({ title: '', description: '', price: '', imageUrl: '' });
+                  }}
                 >
                   <Plus size={20} className="text-white" strokeWidth={3} />
                   {t('add_product')}
@@ -238,7 +259,7 @@ export default function AdminView() {
                         <img src={product.imageUrls?.[0] || product.imageUrl} alt={product.title} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl bg-gray-50 dark:bg-zinc-800 object-center flex-shrink-0 border border-gray-100 dark:border-white/10" />
                         <div className="flex-1 min-w-0">
                           <strong className="block text-lg font-bold truncate tracking-tight text-black dark:text-white">{product.title}</strong>
-                          <div className="text-gray-500 dark:text-zinc-400 font-medium text-sm">${product.price.toFixed(2)}</div>
+                          <div className="text-gray-500 dark:text-zinc-400 font-medium text-sm">R$ {product.price.toFixed(2)}</div>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center gap-2 pr-2">
                           <button className="p-2 sm:p-2.5 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white rounded-xl transition-colors focus:outline-none" onClick={() => setEditingProduct(product)}>

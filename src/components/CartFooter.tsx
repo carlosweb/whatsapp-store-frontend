@@ -29,7 +29,7 @@ export default function CartFooter() {
             </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-black text-white leading-none tracking-tighter">${cartTotalPrice.toFixed(2)}</span>
+            <span className="text-2xl font-black text-white leading-none tracking-tighter">R$ {cartTotalPrice.toFixed(2)}</span>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
               {totalItems} {totalItems === 1 ? t('item') : t('items')}
             </span>

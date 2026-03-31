@@ -6,6 +6,7 @@ CREATE TABLE public.stores (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   slug TEXT UNIQUE NOT NULL,
   business_name TEXT NOT NULL,
+  plan TEXT DEFAULT 'start',
   logo_url TEXT,
   primary_color TEXT DEFAULT '#FF5C00',
   phone_number TEXT,

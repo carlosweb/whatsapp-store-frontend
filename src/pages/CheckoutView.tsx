@@ -76,9 +76,9 @@ export default function CheckoutView() {
                   
                   <div className="flex items-center justify-between mt-auto">
                     <div className="flex flex-col">
-                      <span className="font-black text-xl text-black dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-black text-xl text-black dark:text-white">R$ {(item.price * item.quantity).toFixed(2)}</span>
                       {item.quantity > 1 && (
-                        <div className="text-sm font-semibold text-[var(--color-primary)]">${item.price.toFixed(2)} {t('each')}</div>
+                        <div className="text-sm font-semibold text-[var(--color-primary)]">R$ {item.price.toFixed(2)} {t('each')}</div>
                       )}
                     </div>
                     
@@ -99,7 +99,7 @@ export default function CheckoutView() {
 
           <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex justify-between items-end">
             <span className="text-lg font-bold text-gray-500 dark:text-zinc-400">{t('total')}</span>
-            <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-black to-gray-700 dark:from-white dark:to-zinc-400 tracking-tighter">${totalPrice.toFixed(2)}</span>
+            <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-black to-gray-700 dark:from-white dark:to-zinc-400 tracking-tighter">R$ {totalPrice.toFixed(2)}</span>
           </div>
         </div>
 

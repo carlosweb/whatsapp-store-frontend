@@ -3,8 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminLogin() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -21,7 +23,7 @@ export default function AdminLogin() {
       if (isSignUp) {
         const { error } = await signUp({ email, password });
         if (error) throw error;
-        toast.success("Account created successfully. You can now log in.");
+        toast.success(t('admin_account_created'));
         setIsSignUp(false);
       } else {
         const { error } = await signIn({ email, password });
@@ -44,7 +46,7 @@ export default function AdminLogin() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          {isSignUp ? 'Create Admin Account' : 'Sign in to Admin Dashboard'}
+          {isSignUp ? t('create_admin_account') : t('signin_admin_dashboard')}
         </h2>
       </div>
 
@@ -53,7 +55,7 @@ export default function AdminLogin() {
           <form className="space-y-6" onSubmit={handleAuth}>
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-zinc-300 mb-2">
-                Email address
+                {t('email_address')}
               </label>
               <div className="mt-1">
                 <input
@@ -68,7 +70,7 @@ export default function AdminLogin() {
 
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-zinc-300 mb-2">
-                Password
+                {t('password')}
               </label>
               <div className="mt-1">
                 <input
@@ -87,7 +89,7 @@ export default function AdminLogin() {
                 disabled={loading}
                 className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-black/10 dark:shadow-[var(--color-primary)]/20 text-sm font-extrabold text-white bg-black dark:bg-[var(--color-primary)] hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none disabled:opacity-50"
               >
-                {loading ? 'Processing...' : (isSignUp ? 'Sign up' : 'Sign in')}
+                {loading ? t('processing') : (isSignUp ? t('sign_up') : t('sign_in'))}
               </button>
             </div>
           </form>
@@ -98,7 +100,7 @@ export default function AdminLogin() {
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm font-bold text-gray-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              {isSignUp ? t('already_have_account') : t('dont_have_account')}
             </button>
           </div>
         </div>
